@@ -87,7 +87,8 @@ It is recommended to use names based on dates for the snapshot
 ("snapshot_1") names.
 
 The easiest way of doing periodic backups is to add a cron entry to
-the Docker host.  An example of such a script is:
+the Docker host.  An example of such a script
+(`/usr/local/sbin/nuvla-backup.sh`) is:
 
 ```sh
 #!/bin/bash
@@ -119,11 +120,19 @@ fi
 exit $rc
 ```
 
+The corresponding cron entry would be similar to:
+
+```
+30 */1 * * * elasticsearch (date --utc; /usr/local/sbin/nuvla-backup.sh) >> /var/log/nuvla-backup-cron.log 2>&1
+```
+
+for hourly incremental backups. Adjust as necessary for your case.
+
 Generally, the `/etc/nuvla/nuvla-es-backup.conf` configuration file
 will not be needed, but can contain the following fields:
 
 ```sh
-ES_HOST=159.100.243.234
+ES_HOST=localhost
 ES_PORT=9200
 BACKUP_TIMESTAMP=/var/log/nuvla/nuvla-backup-timestamp
 ```
