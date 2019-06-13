@@ -37,10 +37,8 @@ services:
         condition: on-failure
         delay: 5s
     secrets:
-      - source: s3_access_key
-        target: /var/run/secrets/s3_access_key
-      - source: s3_secret_key
-        target: /var/run/secrets/s3_secret_key
+      - s3_access_key
+      - s3_secret_key
     volumes:
       - esdata:/usr/share/elasticsearch/data
 
@@ -49,11 +47,10 @@ volumes:
     driver: local
 ```
 
-The files `/var/run/secrets/*` must be kept as they are. Other values
-and configurations can be changed.
 
 When deploying, add your S3 access and secret keys to the referenced
-files in the `secrets` subdirectory.
+files in the `secrets` subdirectory.  The files will appear in
+`/run/secrets/` inside the container.
 
 After the Elasticsearch container has been deployed, you must add a
 repository definition to the database. Do the following:
@@ -134,5 +131,3 @@ BACKUP_TIMESTAMP=/var/log/nuvla/nuvla-backup-timestamp
 If you do not have access to the host running Elasticsearch, then you
 can create a container to run the above script within the Docker
 cluster.
-
-
