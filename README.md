@@ -1,8 +1,9 @@
 # Elasticsearch for Nuvla
 
 This repository provides a customized Elasticsearch container that
-allows backups to S3. This can be used as a drop-in replacement for
-the standard Elasticsearch container.
+includes the S3 repository plugin for saving snapshots to S3.  This
+can be used as a drop-in replacement for the standard Elasticsearch
+container.
 
 The versions follow the Elasticsearch version, with an extra field
 that tracks modifications to the customized container. For example,
@@ -47,10 +48,9 @@ volumes:
     driver: local
 ```
 
-
 When deploying, add your S3 access and secret keys to the referenced
-files in the `secrets` subdirectory.  The files will appear in
-`/run/secrets/` inside the container.
+files in the `secrets` subdirectory.  The files will appear in the
+directory `/run/secrets/` inside the container.
 
 After the Elasticsearch container has been deployed, you must add a
 repository definition to the database. Do the following:
@@ -74,8 +74,10 @@ where the file contains:
 ```
 
 The "settings" map must contain the configuration parameters for your
-S3 service. **Note that the S3 bucket must exist before you can add
-this definition to Elasticsearch.**
+S3 service.  See the Elasticsearch S3 Repository Plugin
+[documentation](https://www.elastic.co/guide/en/elasticsearch/plugins/current/repository-s3.html)
+for valid options.  **Note that the S3 bucket must exist before you
+can add this definition to Elasticsearch.**
 
 To trigger a snapshot, use the command:
 
@@ -84,10 +86,10 @@ curl -X PUT "localhost:9200/_snapshot/s3_backup/snapshot_1?wait_for_completion=t
 ```
 
 It is recommended to use names based on dates for the snapshot
-("snapshot_1") names.
+("snapshot_1") identifiers.
 
-The easiest way of doing periodic backups is to add a cron entry to
-the Docker host.  An example of such a script
+Adding a cron entry to the Docker host machine is the easiest setup
+for periodic backups.  An example of such a script
 (`/usr/local/sbin/nuvla-backup.sh`) is:
 
 ```sh
@@ -126,7 +128,8 @@ The corresponding cron entry would be similar to:
 30 */1 * * * elasticsearch (date --utc; /usr/local/sbin/nuvla-backup.sh) >> /var/log/nuvla-backup-cron.log 2>&1
 ```
 
-for hourly incremental backups. Adjust as necessary for your case.
+for hourly incremental backups. Adjust as necessary for your case and
+be sure to touch the output log file.
 
 Generally, the `/etc/nuvla/nuvla-es-backup.conf` configuration file
 will not be needed, but can contain the following fields:
@@ -137,6 +140,18 @@ ES_PORT=9200
 BACKUP_TIMESTAMP=/var/log/nuvla/nuvla-backup-timestamp
 ```
 
+The above script will produce an output log and a timestamp file.
+Both can be used to monitor the backup activity. The status of the
+snapshots can also be obtained directly from Elasticsearch:
+
+```
+curl "localhost:9200/_cat/_snapshots/s3_backup"
+```
+
+This will provide list all snapshots and information on the
+success/failure of each.
+
 If you do not have access to the host running Elasticsearch, then you
-can create a container to run the above script within the Docker
-cluster.
+can create a container to trigger the snapshots via `curl`.  This can
+then be run as a service with a restart policy (e.g. any, delay=4h,
+max-attempts=0) for periodic snapshots.
