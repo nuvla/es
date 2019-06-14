@@ -155,3 +155,20 @@ If you do not have access to the host running Elasticsearch, then you
 can create a container to trigger the snapshots via `curl`.  This can
 then be run as a service with a restart policy (e.g. any, delay=4h,
 max-attempts=0) for periodic snapshots.
+
+
+## Restore zookeeper
+
+Zookeeper is used as a locking queue and a distributed election for distributors.
+
+After restoring Elasticsearch indexes, you have to delete zookeeper data volume 
+(nuvla_zkdata) and recreate it from a healthy backup. To do so you need to run a 
+side container connected on nuvla test network to re-create jobs entries.
+
+To get some help with this command run:
+
+`docker run --network nuvla_test-net --entrypoint /app/job_restore.py nuvladev/job:restore-zk-script -h`
+
+To restore run this one, if you need to change endpoints do it with docker run args.
+
+`docker run --network nuvla_test-net --entrypoint /app/job_restore.py nuvladev/job:restore-zk-script`
