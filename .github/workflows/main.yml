@@ -1,0 +1,44 @@
+name: BUILD
+
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+
+  job-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.SIXSQ_DOCKER_USERNAME }}
+          password: ${{ secrets.SIXSQ_DOCKER_PASSWORD }}
+
+      - name: Extract branch name
+        shell: bash
+        run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+        id: extract_branch
+
+      - name: Build with Maven
+        env:
+          BRANCH: ${{ steps.extract_branch.outputs.branch }}
+        run: mvn deploy
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: false
+          tags: nuvla/es:${{ steps.extract_branch.outputs.branch }}
+
+  job-notify:
+    if: always()
+    name: Post Workflow Status To Slack
+    needs:
+      - job-build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: Gamesight/slack-workflow-status@master
+        with:
+          repo_token: ${{secrets.GITHUB_TOKEN}}
+          slack_webhook_url: ${{secrets.SLACK_WEBHOOK_URL}}
