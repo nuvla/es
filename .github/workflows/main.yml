@@ -27,6 +27,7 @@ jobs:
         uses: docker/setup-buildx-action@v1
         with:
           install: true
+          buildkitd-flags: --debug
 
       - name: Inspect builder
         run: |
